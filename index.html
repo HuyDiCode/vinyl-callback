@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Vinyl - đang kết nối</title>
+<style>
+  :root { --bg: #121212; --fg: #f2f2f2; --muted: #a7a7a7; --accent: #1ed760; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg);
+         color: var(--fg); font: 17px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 360px; padding: 24px 16px; text-align: center; }
+  .disc { width: 96px; height: 96px; margin: 0 auto 24px; border-radius: 50%;
+          background: radial-gradient(circle, #121212 0 6%, var(--accent) 7% 34%, #222 35% 100%);
+          animation: spin 1.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p { color: var(--muted); margin: 0 0 20px; }
+  a.btn { display: inline-block; padding: 14px 28px; border-radius: 999px; background: var(--accent);
+          color: #000; font-weight: 700; text-decoration: none; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <div class="disc"></div>
+  <h1 id="title">Đang quay về máy nghe nhạc...</h1>
+  <p id="msg">Đợi một chút nhé.</p>
+  <a id="go" class="btn hidden" href="#">Bấm vào đây để tiếp tục</a>
+</main>
+<script>
+  // Spotify bắt buộc Redirect URI là HTTPS, nên trang này chỉ làm trung gian:
+  // nhận ?code=...&state=<IP của ESP32>~<mã ngẫu nhiên> rồi chuyển về http://<IP>/callback trong mạng nhà.
+  // Chỉ chấp nhận IP mạng nội bộ để trang không thành chỗ chuyển hướng đi lung tung.
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var state = q.get("state") || "";
+    var host = state.split("~")[0];
+    var isLan = /^(10\.\d{1,3}|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}$/.test(host);
+    if (!isLan || !(q.get("code") || q.get("error"))) {
+      document.getElementById("title").textContent = "Không tìm thấy máy nghe nhạc";
+      document.getElementById("msg").textContent = "Hãy quét lại mã QR trên màn hình đĩa nhạc.";
+      return;
+    }
+    var target = "http://" + host + "/callback" + location.search;
+    var go = document.getElementById("go");
+    go.href = target;
+    setTimeout(function () { go.classList.remove("hidden"); }, 2500);
+    location.replace(target);
+  })();
+</script>
+</body>
+</html>
